@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mysql = require('mysql');
 const inquirer = require('inquirer');
-const InputPrompt = require('inquirer/lib/prompts/input');
+// const InputPrompt = require('inquirer/lib/prompts/input');
 // emitter.setMaxListeners()
 
 const connection = mysql.createConnection({
@@ -153,7 +153,7 @@ const addEmployee = async () => {
                     let results = console.log(`\n${input.employeeFirstName} ${input.employeeLastName} has been added!\n`);
                     resolve(results);
                 });
-                start();
+                // start();
             })    
     })
 };
@@ -236,6 +236,7 @@ const viewDepartments = async () =>
                 });
                 start();
             })
+            
     });
 
 const viewRoles = async () =>
