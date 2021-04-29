@@ -86,14 +86,49 @@ const getDepartmentId = async (title) => {
         })
     })
 }
+const getManagerNames = async () => {
+    return new Promise(async (resolve, reject) => {
+        let array = [];
+        connection.query(`SELECT CONCAT (first_name, " ", last_name) AS employee FROM employee ;`, (err, res) => {
+                if(err) throw err;
+                array = res.map(({employee}) => employee);
+                resolve (array)
+        })
+    })
+}
 // End Helper Functions
 const addEmployee = async () => 
     new Promise(async (resolve, reject) => {
+        let managersArray = await getManagerNames();
+        managersArray.push("Does not report to anyone");
+        let rolesArray = await getRoleNames();
         inquirer
-            .prompt({
-                name: 'employeeName',
+            .prompt([
+            {
+                name: 'employeeFirstName',
                 type: 'input',
-                message: 'What is the employee name?',
+                message: 'What is the employee first name?',
+            },
+            {
+                name: 'employeeLastName',
+                type: 'input',
+                message: 'What is the last name?',
+            },
+            {
+                name: 'employeeRole',
+                type: 'list',
+                message: 'What is the employee title?',
+                choices: rolesArray
+            },
+            {
+                name: 'employeeDepartment',
+                type: 'list',
+                message: 'Who do they report to?',
+                choices: managersArray
+            }
+            ])
+            .then((input) => {
+                connection.query(`INTSERT INTO employee`)
             })
     });
 
