@@ -89,11 +89,10 @@ const getDepartmentId = async (title) => {
         })
     })
 };
-const getManagerId = async (employee) => {
+const getEmployeeId = async (employee) => {
     return new Promise(async (resolve, reject) => {
-        let managerName = employee.manager.split(" ");
-        console.log(managerName);
-        connection.query(`SELECT id FROM employee WHERE first_name = "${managerName[0]}" AND last_name = "${managerName[1]}";`, (err, res) => {
+        let employeeName = employee.employeeName.split(" ");
+        connection.query(`SELECT id FROM employee WHERE first_name = "${employeeName[0]}" AND last_name = "${employeeName[1]}";`, (err, res) => {
             if (err) throw err;
             resolve(res[0].id);
         })
@@ -135,7 +134,7 @@ const addEmployee = async () => {
                     choices: rolesArray
                 },
                 {
-                    name: 'manager',
+                    name: 'employeeName',
                     type: 'list',
                     message: 'Who do they report to?',
                     choices: managersArray
@@ -143,12 +142,12 @@ const addEmployee = async () => {
             ])
             .then(async (input) => {
                 input.title = await getRoleId(input);
-                if(input.manager = "Does not report to anyone") {
-                    input.manager = null;
+                if(input.employeeName = "Does not report to anyone") {
+                    input.employeeName = null;
                 }else{
-                    input.manager = await getManagerId(input)
+                    input.employeeName = await getEmployeeId(input)
                 };
-                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE ("${input.employeeFirstName}", "${input.employeeLastName}", ${input.title}, ${input.manager});`;
+                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE ("${input.employeeFirstName}", "${input.employeeLastName}", ${input.title}, ${input.employeeName});`;
                 connection.query(query, (err, res) => {
                     if (err) throw err;
                     let results = console.log(`\n${input.employeeFirstName} ${input.employeeLastName} has been added!\n`);
@@ -268,8 +267,8 @@ const viewRoles = async () =>
 
     });
 
-const viewEmployees = () =>
-    new Promise((resolve, reject) => {
+const viewEmployees = async () =>
+    new Promise(async(resolve, reject) => {
         connection.query(`SELECT CONCAT (employee.first_name, " ", employee.last_name) AS employee, 
         role.title, role.salary,department.name AS department, 
         CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee 
@@ -285,34 +284,36 @@ const viewEmployees = () =>
 
 // UPDATE ENTRIES
 
-const updateEmployeeRole = () =>
-    new Promise((resolve, reject) => {
-            let employeesArray = getEmployeeNames();
-            let rolesArray = getRoleNames();
-            inquirer
-                .prompt([{
-                        name: 'employeeName',
-                        type: 'list',
-                        message: 'Which employee woud you like to update?',
-                        choices: employeesArray
-                    },
-                    {
-                        name: 'newRole',
-                        type: 'list',
-                        message: 'What is their new title?',
-                        choices: rolesArray
-                    }
-                ])
-                .then((input) => {
-                    const query = ``;
-                    connection.query(query, (err, res) => {
-                        if (err) throw err;
-                        const results = console.log(`${input.employeeName} has been updated!\n`);
-                        resolve(results)
-                    });
-                })
+const updateEmployeeRole = async() =>
+    new Promise(async(resolve, reject) => {
+        let employeesArray = await getEmployeeNames();
+        let rolesArray = await getRoleNames();
+        inquirer
+            .prompt([{
+                    name: 'employeeName',
+                    type: 'list',
+                    message: 'Which employee woud you like to update?',
+                    choices: employeesArray
+                },
+                {
+                    name: 'title',
+                    type: 'list',
+                    message: 'What is their new title?',
+                    choices: rolesArray
+                }
+            ])
+            .then(async(input) => {
+                input.employeeName = await getEmployeeId(input);
+                input.newRole = await getRoleId(input);
+                const query = `UPDATE employee SET role_id = ${input.newRole} WHERE id = ${input.employeeName};`;
+                connection.query(query, (err, res) => {
+                    if (err) throw err;
+                    const results = console.log(`Employee has been updated!\n`);
+                    resolve(results)
+                });
                 start();
             });
+    });
 
 // CONNECTION
 
