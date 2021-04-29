@@ -2,6 +2,7 @@ require('dotenv').config();
 const mysql = require('mysql');
 const inquirer = require('inquirer');
 const InputPrompt = require('inquirer/lib/prompts/input');
+// emitter.setMaxListeners()
 
 const connection = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -18,8 +19,7 @@ const start = async () => {
             type: 'list',
             message: 'What would you like to do?',
             choices: ['Add an employee.', 'Add a role.', 'Add a department.', 'View employees.',
-                'View employees by role.', 'View employees by department.', 'Update employee role.', 'EXIT'
-            ],
+                'View employees by role.', 'View employees by department.', 'Update employee role.', 'EXIT'],
         })
         .then(async (selection) => {
             switch (selection.initialPrompt) {
@@ -36,7 +36,7 @@ const start = async () => {
                     start();
                     break;
                 case 'View employees.':
-                    await viewEmployees();
+                    await viewEmployee();
                     start();
                     break;
                 case 'View employees by role.':
@@ -52,12 +52,14 @@ const start = async () => {
                     start();
                     break;
                 case 'EXIT':
-                    console.log('Goodbye!');
+                    console.log('\nGoodbye!\n');
                     connection.end();
             }
         })
 };
-// Helper Functions
+
+// HELPER FUNCTIONS
+
 const getDepartmentNames = async () => {
     return new Promise(async (resolve, reject) => {
         let array = [];
@@ -78,59 +80,86 @@ const getRoleNames = async () => {
         })
     })
 };
+const getRoleId = async (role) => {
+    return new Promise(async (resolve, reject) => {
+        connection.query(`SELECT id FROM role WHERE title = "${role.title}";`, (err, res) => {
+            if (err) throw err;
+            resolve(res[0].id);
+        })
+    })
+}
 const getDepartmentId = async (title) => {
     return new Promise(async (resolve, reject) => {
         connection.query(`SELECT id FROM department WHERE name = "${title.departmentId}"`, (err, res) => {
-            if(err) throw err;
-            resolve (res[0].id);
+            if (err) throw err;
+            resolve(res[0].id);
         })
     })
-}
-const getManagerNames = async () => {
+};
+const getManagerId = async (employee) => {
+    return new Promise(async (resolve, reject) => {
+        let managerName = employee.manager.split(" ");
+        console.log(managerName);
+        connection.query(`SELECT id FROM employee WHERE first_name = "${managerName[0]}" AND last_name = "${managerName[1]}";`, (err, res) => {
+            if (err) throw err;
+            resolve(res[0].id);
+        })
+    })
+};
+const getEmployeeNames = async () => {
     return new Promise(async (resolve, reject) => {
         let array = [];
         connection.query(`SELECT CONCAT (first_name, " ", last_name) AS employee FROM employee ;`, (err, res) => {
-                if(err) throw err;
-                array = res.map(({employee}) => employee);
-                resolve (array)
+            if(err) throw err;
+            array = res.map(({employee}) => employee);
+            resolve (array)
         })
     })
-}
-// End Helper Functions
-const addEmployee = async () => 
+};
+
+// ADD ENTRIES
+
+const addEmployee = async () => {
     new Promise(async (resolve, reject) => {
-        let managersArray = await getManagerNames();
+        let managersArray = await getEmployeeNames();
         managersArray.push("Does not report to anyone");
         let rolesArray = await getRoleNames();
         inquirer
-            .prompt([
-            {
-                name: 'employeeFirstName',
-                type: 'input',
-                message: 'What is the employee first name?',
-            },
-            {
-                name: 'employeeLastName',
-                type: 'input',
-                message: 'What is the last name?',
-            },
-            {
-                name: 'employeeRole',
-                type: 'list',
-                message: 'What is the employee title?',
-                choices: rolesArray
-            },
-            {
-                name: 'employeeDepartment',
-                type: 'list',
-                message: 'Who do they report to?',
-                choices: managersArray
-            }
+            .prompt([{
+                    name: 'employeeFirstName',
+                    type: 'input',
+                    message: 'What is the employee first name?',
+                },
+                {
+                    name: 'employeeLastName',
+                    type: 'input',
+                    message: 'What is the last name?',
+                },
+                {
+                    name: 'title',
+                    type: 'list',
+                    message: 'What is the employee title?',
+                    choices: rolesArray
+                },
+                {
+                    name: 'manager',
+                    type: 'list',
+                    message: 'Who do they report to?',
+                    choices: managersArray
+                }
             ])
-            .then((input) => {
-                connection.query(`INTSERT INTO employee`)
+            .then(async (input) => {
+                input.title = await getRoleId(input);
+                input.manager = await getManagerId(input);
+                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE ("${input.employeeFirstName}", "${input.employeeLastName}", ${input.title}, ${input.manager});`
+                connection.query(query, (err, res) => {
+                    if (err) throw err;
+                    let results = console.log(`\n${input.employeeFirstName} ${input.employeeLastName} has been added!\n`);
+                    resolve(results);
+                })
             })
-    });
+    })
+};
 
 const addDepartment = async () => 
     new Promise(async (resolve, reject) => {
@@ -143,42 +172,46 @@ const addDepartment = async () =>
             .then((input) => {
                 connection.query(`INSERT INTO department (name) VALUE ("${input.departmentName}");`, (err,res) => {
                     if(err) throw err;
-                    const results = console.log(`\n${input.departmentName} has been added!\n`);
+                    let results = console.log(`\n${input.departmentName} has been added!\n`);
                     resolve (results);
                 })
             })
     });
-const addRole = async () =>
+
+const addRole = async () => {
     new Promise(async (resolve, reject) => {
         let departmentsArray = await getDepartmentNames();
         inquirer
-            .prompt([
-            {
-                name: 'title',
-                type: 'input',
-                message: 'What is the role title?'
-            },
-            {
-                name: 'salary',
-                type: 'input',
-                message: 'What is the salary for this role?'
-            },
-            {
-                name: 'departmentId',
-                type: 'list',
-                message: 'Which department does this role report to?',
-                choices: departmentsArray
-            }])
-            .then(async(input) => {
+            .prompt([{
+                    name: 'title',
+                    type: 'input',
+                    message: 'What is the role title?'
+                },
+                {
+                    name: 'salary',
+                    type: 'input',
+                    message: 'What is the salary for this role?'
+                },
+                {
+                    name: 'departmentId',
+                    type: 'list',
+                    message: 'Which department does this role report to?',
+                    choices: departmentsArray
+                }
+            ])
+            .then(async (input) => {
                 input.departmentId = await getDepartmentId(input);
                 const query = `INSERT INTO role (title, salary, department_id) VALUES ("${input.title}", ${input.salary}, ${input.departmentId});`;
                 connection.query(query, (err, res) => {
-                    if(err) throw err;
+                    if (err) throw err;
                     let results = console.log(`\n${input.title} has been added!\n`);
-                    resolve (results)
+                    resolve(results)
                 })
             })
     })
+};
+
+// VIEW ELEMENTS
 
 const viewDepartments = async () =>
     new Promise(async (resolve, reject) => {
@@ -245,6 +278,38 @@ const viewEmployees = () =>
             resolve(table)
         })
     });
+
+// UPDATE ENTRIES
+
+const updateEmployeeRole = () =>
+    new Promise((resolve, reject) => {
+            let employeesArray = getEmployeeNames();
+            let rolesArray = getRoleNames();
+            inquirer
+                .prompt([{
+                        name: 'employeeName',
+                        type: 'list',
+                        message: 'Which employee woud you like to update?',
+                        choices: employeesArray
+                    },
+                    {
+                        name: 'newRole',
+                        type: 'list',
+                        message: 'What is their new title?',
+                        choices: rolesArray
+                    }
+                ])
+                .then((input) => {
+                    const query = ``;
+                    connection.query(query, (err, res) => {
+                        if (err) throw err;
+                        const results = console.log(`${input.employeeName} has been updated!\n`);
+                        resolve(results)
+                    });
+                })
+            });
+
+// CONNECTION
 
 connection.connect((err) => {
     if (err) throw err;
