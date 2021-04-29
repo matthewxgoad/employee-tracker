@@ -152,7 +152,7 @@ const addEmployee = async () => {
                     let results = console.log(`\n${input.employeeFirstName} ${input.employeeLastName} has been added!\n`);
                     resolve(results);
                 });
-                // start();
+                start();
             })    
     })
 };
@@ -165,13 +165,13 @@ const addDepartment = async () =>
                 type: 'input',
                 message: 'What is the name of the department?',
             })
-            .then((input) => {
+            .then(async(input) => {
                 connection.query(`INSERT INTO department (name) VALUE ("${input.departmentName}");`, (err,res) => {
                     if(err) throw err;
                     let results = console.log(`\n${input.departmentName} has been added!\n`);
                     resolve (results);
                 });
-                start();
+                await start();
             })
     });
 
@@ -248,7 +248,7 @@ const viewRoles = async () =>
                 message: 'Which role would you like to see?',
                 choices: rolesArray,
             })
-            .then((selection) => {
+            .then(async(selection) => {
                 const query = `SELECT CONCAT (employee.first_name, " ", employee.last_name) AS employee, 
                 department.name AS department, 
                 CONCAT (manager.first_name, " ", manager.last_name) AS manager FROM employee 
@@ -262,7 +262,7 @@ const viewRoles = async () =>
                     const table = console.table(res);
                     resolve(table)
                 });
-                start();
+                await start();
             })
 
     });
