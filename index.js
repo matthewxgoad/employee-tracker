@@ -1,8 +1,7 @@
 require('dotenv').config();
 const mysql = require('mysql');
 const inquirer = require('inquirer');
-// const InputPrompt = require('inquirer/lib/prompts/input');
-// emitter.setMaxListeners()
+const cTable = require('console.table');
 
 const connection = mysql.createConnection({
     host: process.env.DB_HOST,
