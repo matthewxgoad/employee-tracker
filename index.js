@@ -25,31 +25,24 @@ const start = async () => {
             switch (selection.initialPrompt) {
                 case 'Add an employee.':
                     await addEmployee();
-                    start();
                     break;
                 case 'Add a role.':
                     await addRole();
-                    start();
                     break;
                 case 'Add a department.':
                     await addDepartment();
-                    start();
                     break;
                 case 'View employees.':
-                    await viewEmployee();
-                    start();
+                    await viewEmployees();
                     break;
                 case 'View employees by role.':
                     await viewRoles();
-                    start();
                     break;
                 case 'View employees by department.':
                     await viewDepartments();
-                    start();
                     break;
                 case 'Update employee role.':
                     await updateEmployeeRole();
-                    start();
                     break;
                 case 'EXIT':
                     console.log('\nGoodbye!\n');
@@ -150,14 +143,19 @@ const addEmployee = async () => {
             ])
             .then(async (input) => {
                 input.title = await getRoleId(input);
-                input.manager = await getManagerId(input);
-                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE ("${input.employeeFirstName}", "${input.employeeLastName}", ${input.title}, ${input.manager});`
+                if(input.manager = "Does not report to anyone") {
+                    input.manager = null;
+                }else{
+                    input.manager = await getManagerId(input)
+                };
+                const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE ("${input.employeeFirstName}", "${input.employeeLastName}", ${input.title}, ${input.manager});`;
                 connection.query(query, (err, res) => {
                     if (err) throw err;
                     let results = console.log(`\n${input.employeeFirstName} ${input.employeeLastName} has been added!\n`);
                     resolve(results);
-                })
-            })
+                });
+                start();
+            })    
     })
 };
 
@@ -174,7 +172,8 @@ const addDepartment = async () =>
                     if(err) throw err;
                     let results = console.log(`\n${input.departmentName} has been added!\n`);
                     resolve (results);
-                })
+                });
+                start();
             })
     });
 
@@ -206,7 +205,8 @@ const addRole = async () => {
                     if (err) throw err;
                     let results = console.log(`\n${input.title} has been added!\n`);
                     resolve(results)
-                })
+                });
+                start();
             })
     })
 };
@@ -234,7 +234,8 @@ const viewDepartments = async () =>
                     console.log('\nDone!\n');
                     const table = console.table(res);
                     resolve(table)
-                })
+                });
+                start();
             })
     });
 
@@ -261,8 +262,10 @@ const viewRoles = async () =>
                     console.log('\nDone!\n');
                     const table = console.table(res);
                     resolve(table)
-                })
+                });
+                start();
             })
+
     });
 
 const viewEmployees = () =>
@@ -276,7 +279,8 @@ const viewEmployees = () =>
             console.log('\nDone!\n');
             const table = console.table(res);
             resolve(table)
-        })
+        });
+        start();
     });
 
 // UPDATE ENTRIES
@@ -307,6 +311,7 @@ const updateEmployeeRole = () =>
                         resolve(results)
                     });
                 })
+                start();
             });
 
 // CONNECTION
