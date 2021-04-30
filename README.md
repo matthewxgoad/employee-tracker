@@ -2,6 +2,10 @@
 
 [![License: MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+![Animated GIF of application](/images/employee-tracker-demo.gif)
+
+[Click here for a video walkthrough of the application.](https://drive.google.com/file/d/1fM_QcUT02OkNjXjJsWYI1XoQVYatXk32/view)
+
 ## Table of Contents
 - [Description](#description)
 - [Installation](#installation)
@@ -28,8 +32,6 @@ This application allows the user to create employees, roles, and departments in 
 
 This project is licensed under the MIT License. Click the link below to learn more about how you can use this project.  
 License: [MIT License](https://opensource.org/licenses/MIT)
-
-
 
 ## Questions
 
